@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — DocExpo{% endblock %}
+{% block navbar_title %}Workspace Overview{% endblock %}
+
+{% block content %}
+<div class="page-body">
+  <!-- Dynamic Time-Based Greeting -->
+  <div style="margin-bottom: 2.25rem;">
+    <h1 id="dynamic-greeting" style="font-size: var(--text-3xl); font-weight: 700; letter-spacing: -0.025em; margin-bottom: 0.35rem; color: #FFFFFF;">
+      Welcome back, {{ current_user.full_name.split(' ')[0] }}
+    </h1>
+    <p style="color: var(--text-secondary); font-size: var(--text-base);">
+      What would you like to understand today?
+    </p>
+  </div>
+
+  <!-- Drag-and-Drop PDF Upload Zone -->
+  <div class="card" style="margin-bottom: 2.5rem; padding: 2rem;">
+    <div id="upload-dropzone" class="upload-dropzone">
+      <input type="file" id="pdf-file-input" accept=".pdf,application/pdf" style="display: none;">
+      
+      <div class="upload-icon-container">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+      </div>
+
+      <h3 style="font-size: var(--text-lg); font-weight: 600; margin-bottom: 0.35rem; color: #FFFFFF;">
+        Drop your PDF here, or <span style="color: var(--accent-lavender); text-decoration: underline;">browse files</span>
+      </h3>
+      <p style="font-size: var(--text-sm); color: var(--text-secondary); margin-bottom: 0.65rem;">
+        Textbooks, academic research, technical specs, or study syllabi
+      </p>
+      <div style="font-size: var(--text-xs); color: var(--text-tertiary);">
+        Supports PDF up to 32 MB • Genuine page extraction & vector indexing
+      </div>
+
+      <!-- Upload Progress Container -->
+      <div id="upload-progress-container" class="upload-progress-container">
+        <div class="progress-bar-track">
+          <div id="upload-progress-bar" class="progress-bar-fill"></div>
+        </div>
+        <div id="upload-status-text" style="font-size: var(--text-xs); color: var(--text-secondary); margin-top: 0.65rem;">
+          Uploading document...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Real User Statistics Grid -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem;">
+    <div class="card" style="padding: 1.5rem;">
+      <div style="font-size: 11px; color: var(--text-tertiary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.45rem;">
+        Total Documents
+      </div>
+      <div id="stat-docs" style="font-size: var(--text-3xl); font-weight: 700; color: #FFFFFF;">
+        0
+      </div>
+    </div>
+
+    <div class="card" style="padding: 1.5rem;">
+      <div style="font-size: 11px; color: var(--text-tertiary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.45rem;">
+        Conversations
+      </div>
+      <div id="stat-convs" style="font-size: var(--text-3xl); font-weight: 700; color: #FFFFFF;">
+        0
+      </div>
+    </div>
+
+    <div class="card" style="padding: 1.5rem;">
+      <div style="font-size: 11px; color: var(--text-tertiary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.45rem;">
+        Summaries Generated
+      </div>
+      <div id="stat-summaries" style="font-size: var(--text-3xl); font-weight: 700; color: #FFFFFF;">
+        0
+      </div>
+    </div>
+
+    <div class="card" style="padding: 1.5rem;">
+      <div style="font-size: 11px; color: var(--text-tertiary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.45rem;">
+        Pages Extracted
+      </div>
+      <div id="stat-pages" style="font-size: var(--text-3xl); font-weight: 700; color: var(--accent-lavender); text-shadow: 0 0 16px rgba(185, 167, 255, 0.35);">
+        0
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Documents & Summaries Section -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.75rem;">
+    <!-- Recent Documents -->
+    <div class="card">
+      <div class="card-header">
+        <h3 style="font-size: var(--text-base); font-weight: 600; color: #FFFFFF;">Recent Documents</h3>
+        <a href="{{ url_for('documents.documents_page') }}" class="btn btn-ghost btn-sm" style="font-size: 12px;">View all</a>
+      </div>
+      <div id="recent-docs-container">
+        <div style="text-align: center; padding: 2rem 1rem; color: var(--text-secondary); font-size: var(--text-sm);">
+          Loading recent documents...
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Summaries -->
+    <div class="card">
+      <div class="card-header">
+        <h3 style="font-size: var(--text-base); font-weight: 600; color: #FFFFFF;">Saved Summaries</h3>
+        <span class="badge badge-accent" style="font-size: 11px;">AI Syntheses</span>
+      </div>
+      <div id="recent-summaries-container">
+        <div style="text-align: center; padding: 2rem 1rem; color: var(--text-secondary); font-size: var(--text-sm);">
+          Loading summaries...
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const hour = new Date().getHours();
+  const userName = "{{ current_user.full_name.split(' ')[0] }}";
+  let greeting = "Good evening";
+  if (hour < 12) greeting = "Good morning";
+  else if (hour < 17) greeting = "Good afternoon";
+
+  const greetingElem = document.getElementById('dynamic-greeting');
+  if (greetingElem) greetingElem.textContent = `${greeting}, ${userName}`;
+
+  fetch('/api/dashboard/stats')
+    .then(res => res.json())
+    .then(data => {
+      const s = data.stats;
+      document.getElementById('stat-docs').textContent = s.total_documents;
+      document.getElementById('stat-convs').textContent = s.total_conversations;
+      document.getElementById('stat-summaries').textContent = s.total_summaries;
+      document.getElementById('stat-pages').textContent = s.total_pages_processed;
+    })
+    .catch(() => {});
+
+  fetch('/api/dashboard/recent')
+    .then(res => res.json())
+    .then(data => {
+      const docsContainer = document.getElementById('recent-docs-container');
+      const summsContainer = document.getElementById('recent-summaries-container');
+
+      if (!data.recent_documents || data.recent_documents.length === 0) {
+        docsContainer.innerHTML = `
+          <div style="text-align: center; padding: 2rem 1rem; color: var(--text-secondary); font-size: var(--text-sm);">
+            No documents uploaded yet. Drop a PDF above to get started.
+          </div>
+        `;
+      } else {
+        let html = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
+        data.recent_documents.forEach(doc => {
+          let badge = `<span class="badge badge-success">${doc.page_count} pages</span>`;
+          if (doc.processing_status === 'ocr_required') badge = '<span class="badge badge-warning">Scanned / OCR</span>';
+          if (doc.processing_status === 'error') badge = '<span class="badge badge-error">Error</span>';
+
+          html += `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-radius: var(--radius-md); background: rgba(255, 255, 255, 0.035); border: 1px solid var(--glass-border-subtle); transition: all 0.2s ease;">
+              <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 1rem;">
+                <a href="/documents/${doc.id}" style="font-weight: 500; font-size: var(--text-sm); color: #FFFFFF; text-decoration: none;">
+                  ${doc.original_filename}
+                </a>
+                <div style="font-size: 11px; color: var(--text-tertiary);">${doc.formatted_size}</div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.65rem; flex-shrink: 0;">
+                ${badge}
+                <a href="/documents/${doc.id}" class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 11px;">Chat</a>
+              </div>
+            </div>
+          `;
+        });
+        html += '</div>';
+        docsContainer.innerHTML = html;
+      }
+
+      if (!data.recent_summaries || data.recent_summaries.length === 0) {
+        summsContainer.innerHTML = `
+          <div style="text-align: center; padding: 2rem 1rem; color: var(--text-secondary); font-size: var(--text-sm);">
+            No summaries generated yet. Open any document to generate notes or revision questions.
+          </div>
+        `;
+      } else {
+        let sHtml = '<div style="display: flex; flex-direction: column; gap: 0.75rem;">';
+        data.recent_summaries.forEach(s => {
+          const typeName = s.summary_type.replace(/_/g, ' ');
+          sHtml += `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-radius: var(--radius-md); background: rgba(255, 255, 255, 0.035); border: 1px solid var(--glass-border-subtle);">
+              <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 1rem;">
+                <span class="badge badge-accent" style="text-transform: capitalize; margin-bottom: 2px;">${typeName}</span>
+                <div style="font-size: 12px; color: var(--text-secondary);">${s.document_name}</div>
+              </div>
+              <a href="/documents/${s.document_id}" class="btn btn-secondary btn-sm" style="padding: 4px 10px; font-size: 11px;">View</a>
+            </div>
+          `;
+        });
+        sHtml += '</div>';
+        summsContainer.innerHTML = sHtml;
+      }
+    })
+    .catch(() => {});
+});
+</script>
+{% endblock %}

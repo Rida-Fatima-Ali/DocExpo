@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In — DocExpo{% endblock %}
+
+{% block public_content %}
+<!-- Live ReactBits Antigravity WebGL 2 Background -->
+<div id="antigravity-container" style="position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; overflow: hidden; background: #000000;">
+  <canvas id="antigravity-canvas" style="display: block; width: 100%; height: 100%;"></canvas>
+</div>
+
+<div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem 1.5rem; position: relative; z-index: 10;">
+  <div style="width: 100%; max-width: 440px;">
+    <!-- Brand Header -->
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <a href="/" class="brand-logo-group" style="justify-content: center; margin-bottom: 1.5rem;">
+        <div class="brand-logo-badge" style="width: 48px; height: 48px; border-radius: 14px;">
+          <div class="brand-glyph-overlay">
+            <img src="{{ url_for('static', filename='images/batman_logo_3d.png') }}" alt="Batman Emblem" class="batman-logo-img" style="max-width: 40px; max-height: 24px;">
+          </div>
+        </div>
+        <div class="brand-name-wrap">
+          <span class="brand-name" style="font-size: 1.4rem;">DocExpo</span>
+          <span class="brand-edition">2.0</span>
+        </div>
+      </a>
+
+      <h1 style="font-size: 1.85rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 0.4rem; color: #FFFFFF;">
+        Welcome back.
+      </h1>
+      <p style="color: rgba(240, 240, 248, 0.75); font-size: 14px;">
+        Your documents are right where you left them.
+      </p>
+    </div>
+
+    <!-- True Translucent Liquid Glass Card -->
+    <div class="liquid-glass-card" style="padding: 2.75rem 2.25rem;">
+      <form id="login-form">
+        <div class="form-group" style="margin-bottom: 1.4rem;">
+          <label class="form-label" for="login-email" style="display: block; margin-bottom: 0.5rem; font-size: 13px; font-weight: 500; color: rgba(255, 255, 255, 0.85);">
+            Email Address
+          </label>
+          <input type="email" id="login-email" class="liquid-glass-input" placeholder="name@domain.com" required autocomplete="email">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.6rem;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+            <label class="form-label" for="login-password" style="margin-bottom: 0; font-size: 13px; font-weight: 500; color: rgba(255, 255, 255, 0.85);">
+              Password
+            </label>
+            <button type="button" id="toggle-pwd-label" class="btn-ghost" style="padding: 0; font-size: 12px; color: var(--accent-lavender); cursor: pointer; background: none; border: none;">
+              Show
+            </button>
+          </div>
+          <div class="password-input-wrap">
+            <input type="password" id="login-password" class="liquid-glass-input" placeholder="Enter your password" required autocomplete="current-password">
+            <button type="button" id="toggle-pwd-btn" class="password-toggle-btn" aria-label="Show password" title="Toggle password visibility">
+              <!-- Eye Icon (Open) -->
+              <svg class="eye-open-icon" viewBox="0 0 24 24">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <!-- Eye Icon (Closed/Slash) -->
+              <svg class="eye-closed-icon" viewBox="0 0 24 24" style="display: none;">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div id="login-error-msg" class="form-error" style="display: none; margin-bottom: 1.25rem;"></div>
+
+        <button type="submit" id="btn-login-submit" class="btn-star-border" data-star-color="#E2DAFF" data-star-trail="#B9A7FF" style="width: 100%; padding: 0.9rem; font-size: 15px;">
+          <span>Sign In</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- Switch to Register -->
+    <div style="text-align: center; margin-top: 1.75rem; font-size: 14px; color: rgba(255, 255, 255, 0.65);">
+      Don't have an account yet? <a href="{{ url_for('auth.register_page') }}" style="color: var(--accent-lavender); font-weight: 500; text-decoration: underline; text-underline-offset: 4px;">Create your workspace</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- ReactBits Live Engines -->
+<script src="{{ url_for('static', filename='js/antigravity.js') }}"></script>
+<script src="{{ url_for('static', filename='js/star_border.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const pwdInput = document.getElementById('login-password');
+  const toggleBtn = document.getElementById('toggle-pwd-btn');
+  const toggleLabel = document.getElementById('toggle-pwd-label');
+
+  function togglePasswordVisibility() {
+    if (!pwdInput) return;
+    const isPwd = pwdInput.type === 'password';
+    pwdInput.type = isPwd ? 'text' : 'password';
+    
+    const eyeOpen = toggleBtn ? toggleBtn.querySelector('.eye-open-icon') : null;
+    const eyeClosed = toggleBtn ? toggleBtn.querySelector('.eye-closed-icon') : null;
+    
+    if (eyeOpen && eyeClosed) {
+      eyeOpen.style.display = isPwd ? 'none' : 'block';
+      eyeClosed.style.display = isPwd ? 'block' : 'none';
+    }
+    if (toggleLabel) {
+      toggleLabel.textContent = isPwd ? 'Hide' : 'Show';
+    }
+    if (toggleBtn) {
+      toggleBtn.setAttribute('aria-label', isPwd ? 'Hide password' : 'Show password');
+    }
+    pwdInput.focus();
+  }
+
+  if (toggleBtn) toggleBtn.addEventListener('click', togglePasswordVisibility);
+  if (toggleLabel) toggleLabel.addEventListener('click', togglePasswordVisibility);
+
+  const loginForm = document.getElementById('login-form');
+  const errorMsg = document.getElementById('login-error-msg');
+  const submitBtn = document.getElementById('btn-login-submit');
+
+  if (loginForm) {
+    loginForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      errorMsg.style.display = 'none';
+      submitBtn.disabled = true;
+
+      const email = document.getElementById('login-email').value.trim();
+      const password = pwdInput.value;
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Authentication failed. Please verify credentials.');
+        }
+        window.location.href = '/dashboard';
+      } catch (err) {
+        errorMsg.textContent = err.message;
+        errorMsg.style.display = 'block';
+        submitBtn.disabled = false;
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

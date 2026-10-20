@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}{{ document.original_filename }} — DocExpo Intelligence{% endblock %}
+{% block navbar_title %}{{ document.original_filename }}{% endblock %}
+
+{% block content %}
+<div class="workspace-layout" data-document-id="{{ document.id }}">
+  <!-- Left Column: Document Metadata & Quick Actions -->
+  <aside class="workspace-sidebar" style="padding: 1.5rem;">
+    <div>
+      <div style="margin-bottom: 1.5rem;">
+        <a href="{{ url_for('documents.documents_page') }}" class="btn btn-ghost btn-sm" style="padding-left: 0; margin-bottom: 0.85rem; color: var(--accent-lavender);">
+          ← Back to Library
+        </a>
+        <h2 style="font-size: var(--text-base); font-weight: 600; line-height: 1.4; word-break: break-word; margin-bottom: 0.5rem; color: #FFFFFF;">
+          {{ document.original_filename }}
+        </h2>
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+          {% if document.processing_status == 'processed' %}
+            <span class="badge badge-success">{{ document.page_count }} Pages</span>
+          {% elif document.processing_status == 'ocr_required' %}
+            <span class="badge badge-warning">Scanned / OCR</span>
+          {% elif document.processing_status == 'error' %}
+            <span class="badge badge-error">Failed</span>
+          {% else %}
+            <span class="badge badge-neutral">Processing</span>
+          {% endif %}
+          <span style="font-size: 12px; color: var(--text-tertiary);">{{ document.formatted_size }}</span>
+        </div>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <div style="display: flex; flex-direction: column; gap: 0.65rem; margin-bottom: 2rem;">
+        <button id="btn-open-summary-modal" class="btn btn-secondary btn-sm" style="justify-content: flex-start; width: 100%;">
+          <span>📝 Generate Summary</span>
+        </button>
+        <button id="btn-new-chat" class="btn btn-primary btn-sm" style="justify-content: flex-start; width: 100%;">
+          <span>+ New Discussion</span>
+        </button>
+        <a href="{{ url_for('documents.download_pdf_file', document_id=document.id, download='true') }}" class="btn btn-ghost btn-sm" style="justify-content: flex-start; width: 100%;">
+          <span>↓ Download Original PDF</span>
+        </a>
+      </div>
+
+      <!-- OCR Notification if Scanned -->
+      {% if document.processing_status == 'ocr_required' %}
+      <div style="background: var(--warning-bg); border: 1px solid var(--warning-border); border-radius: var(--radius-md); padding: 12px; margin-bottom: 1.5rem;">
+        <div style="font-weight: 600; font-size: 12px; color: var(--warning); margin-bottom: 4px;">Scanned PDF Detected</div>
+        <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.4;">
+          This document appears to contain scanned images. OCR is required to extract a clean text layer.
+        </p>
+      </div>
+      {% endif %}
+
+      <!-- Grounding Safety Policy -->
+      <div class="liquid-glass-subtle" style="padding: 14px; margin-bottom: 1.5rem;">
+        <div style="font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--accent-lavender); margin-bottom: 6px;">
+          Grounding Policy
+        </div>
+        <p style="font-size: 11px; color: var(--text-secondary); line-height: 1.5;">
+          DocExpo formulates responses strictly using verified page chunks from this document. External guesses are filtered out.
+        </p>
+      </div>
+
+      <!-- Verified Source Citations Drawer -->
+      <div style="margin-top: 1rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+          <h3 style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">
+            Cited Passages
+          </h3>
+          <span class="badge badge-accent" style="font-size: 10px;">Live RAG</span>
+        </div>
+        <div id="sources-list">
+          <div style="text-align: center; padding: 24px 10px; color: var(--text-tertiary); font-size: 12px;">
+            Inquire about any topic to inspect matching passages and exact page numbers.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="font-size: 11px; color: var(--text-tertiary); text-align: center; border-top: 1px solid var(--glass-border-subtle); padding-top: 1rem; margin-top: 1.5rem;">
+      Uploaded {{ document.uploaded_at.strftime('%b %d, %Y') }}
+    </div>
+  </aside>
+
+  <!-- Center Column: Dedicated Native PDF Viewer -->
+  <section class="workspace-center-pdf">
+    <div class="pdf-viewer-header">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 12px; font-weight: 500; color: #FFFFFF;">Document Preview</span>
+        <span class="badge badge-neutral" style="font-size: 10px;">{{ document.original_filename }}</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <a href="{{ url_for('documents.download_pdf_file', document_id=document.id) }}" target="_blank" class="btn btn-ghost btn-sm" style="font-size: 11px; padding: 2px 8px;" title="Open in dedicated tab">
+          Open in New Tab ↗
+        </a>
+      </div>
+    </div>
+    <iframe src="{{ url_for('documents.download_pdf_file', document_id=document.id) }}" class="pdf-frame" title="Document Preview"></iframe>
+  </section>
+
+  <!-- Right Column: AI Assistant & Synthesis Panel -->
+  <section class="workspace-right-chat">
+    <!-- Chat Timeline Stream -->
+    <div id="chat-messages" class="chat-messages-container">
+      {% if document.conversations.count() == 0 or document.conversations.first().messages.count() == 0 %}
+      <div class="empty-chat-state" style="text-align: center; padding: 40px 16px; color: var(--text-secondary); margin: auto 0;">
+        <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(185, 167, 255, 0.12); border: 1px solid rgba(185, 167, 255, 0.28); color: var(--accent-lavender); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem auto; font-size: 20px;">
+          ✦
+        </div>
+        <h3 style="font-size: var(--text-lg); font-weight: 600; color: #FFFFFF; margin-bottom: 0.5rem;">
+          Chat with {{ document.original_filename }}
+        </h3>
+        <p style="font-size: var(--text-sm); max-width: 360px; margin: 0 auto 1.5rem auto; line-height: 1.6;">
+          Ask questions, clarify complex sections, extract key formulas, or request page citations.
+        </p>
+
+        <!-- Suggested Prompt Chips -->
+        <div style="display: flex; flex-direction: column; gap: 0.5rem; max-width: 380px; margin: 0 auto;">
+          <button class="btn btn-secondary btn-sm suggestion-chip" style="text-align: left; justify-content: flex-start;">What is the central topic of this document?</button>
+          <button class="btn btn-secondary btn-sm suggestion-chip" style="text-align: left; justify-content: flex-start;">Summarize the main findings.</button>
+          <button class="btn btn-secondary btn-sm suggestion-chip" style="text-align: left; justify-content: flex-start;">Explain the most important concepts in simple terms.</button>
+          <button class="btn btn-secondary btn-sm suggestion-chip" style="text-align: left; justify-content: flex-start;">Which conclusions does the author reach?</button>
+        </div>
+      </div>
+      {% else %}
+        {% for msg in document.conversations.first().messages %}
+          {% if msg.role == 'user' %}
+          <div class="chat-message user-message">
+            <div class="message-bubble">{{ msg.content }}</div>
+          </div>
+          {% else %}
+          <div class="chat-message assistant-message">
+            <div class="user-avatar" style="background:rgba(185,167,255,0.15);color:var(--accent-lavender);width:28px;height:28px;font-size:11px;font-weight:700;">
+              AI
+            </div>
+            <div class="message-bubble">
+              <div class="markdown-body">
+                {{ msg.content | replace('
+', '<br>') | safe }}
+              </div>
+              {% if msg.sources.count() > 0 %}
+              <div class="message-sources-bar" style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px;">
+                {% for src in msg.sources %}
+                <button class="source-pill" onclick="highlightSource({{ src.source_page }}, '{{ src.relevant_excerpt | escape }}')">
+                  <span>Page {{ src.source_page }}</span>
+                </button>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    </div>
+
+    <!-- Floating iOS-style Composer Bar -->
+    <div class="chat-input-container">
+      <div class="chat-input-box">
+        <textarea id="chat-input" class="chat-textarea" placeholder="Ask a question about this document..." rows="1"></textarea>
+        <button id="chat-send-btn" class="btn btn-primary btn-sm" style="padding: 0.45rem 0.85rem;" title="Send question">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+      <div style="font-size: 11px; color: var(--text-tertiary); margin-top: 6px; text-align: right;">
+        Grounded in verified document excerpts. Press Shift+Enter for new line.
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Summarize Document Modal -->
+<div id="summary-modal" class="modal-backdrop">
+  <div class="modal-content" style="padding: 2rem; max-width: 680px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;">
+      <h3 style="font-size: var(--text-xl); font-weight: 700; color: #FFFFFF;">Generate Document Summary</h3>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('summary-modal')">✕</button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="summary-type-select">Summary Format</label>
+      <select id="summary-type-select" class="form-control">
+        <option value="quick">Quick Summary (1-2 paragraph overview)</option>
+        <option value="detailed">Detailed Summary (Thematic section-by-section breakdown)</option>
+        <option value="key_points">Key Points (Bulleted findings, definitions & facts)</option>
+        <option value="study_notes">Study Notes (Revision notes, definitions, core principles)</option>
+        <option value="revision_questions">Questions for Revision (Exam prep with answers)</option>
+      </select>
+    </div>
+
+    <div style="margin-bottom: 1.5rem;">
+      <button id="btn-generate-summary" class="btn btn-primary" style="width: 100%; padding: 0.75rem;">
+        Generate Summary
+      </button>
+    </div>
+
+    <div id="summary-loading-indicator" style="display: none; text-align: center; padding: 30px; color: var(--text-secondary);">
+      <div style="font-size: 14px; margin-bottom: 8px; color: var(--accent-lavender);">✦ Analyzing document text & synthesizing content...</div>
+      <div style="font-size: 12px; color: var(--text-tertiary);">Formulating grounded synthesis</div>
+    </div>
+
+    <div id="summary-result-content" class="markdown-body" style="background: rgba(10, 10, 13, 0.6); border: 1px solid var(--glass-border); border-radius: var(--radius-md); padding: 1.25rem; max-height: 380px; overflow-y: auto; font-size: var(--text-sm); line-height: 1.6;">
+      <span style="color: var(--text-tertiary); font-style: italic;">Select a format and click Generate to produce your summary.</span>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.25rem;">
+      <button id="btn-copy-summary" class="btn btn-secondary btn-sm" style="display: none;">Copy to Clipboard</button>
+      <button id="btn-download-summary" class="btn btn-secondary btn-sm" style="display: none;">Download as .TXT</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeModal('summary-modal')">Close</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/workspace.js') }}"></script>
+{% endblock %}

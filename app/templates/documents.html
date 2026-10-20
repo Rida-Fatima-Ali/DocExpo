@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}My Documents — DocExpo{% endblock %}
+{% block navbar_title %}Document Library{% endblock %}
+
+{% block content %}
+<div class="page-body">
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h1 style="font-size: var(--text-2xl); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.35rem; color: #FFFFFF;">
+        My Documents
+      </h1>
+      <p style="color: var(--text-secondary); font-size: var(--text-sm);">
+        Manage your uploaded PDFs, summaries, and conversational histories
+      </p>
+    </div>
+    <a href="{{ url_for('dashboard.dashboard_page') }}" class="btn btn-primary btn-sm">
+      <span>+ Upload New PDF</span>
+    </a>
+  </div>
+
+  <!-- Search and Filtering Bar -->
+  <div class="card" style="padding: 1rem 1.25rem; margin-bottom: 2rem;">
+    <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+      <div style="flex: 1; min-width: 220px;">
+        <input type="text" id="doc-search-input" class="form-control" placeholder="Search by document name...">
+      </div>
+
+      <div style="width: 170px;">
+        <select id="doc-status-filter" class="form-control">
+          <option value="">All Statuses</option>
+          <option value="processed">Ready</option>
+          <option value="ocr_required">Scanned / OCR</option>
+          <option value="pending">Processing</option>
+          <option value="error">Error</option>
+        </select>
+      </div>
+
+      <div style="width: 170px;">
+        <select id="doc-sort-select" class="form-control">
+          <option value="date_desc">Newest First</option>
+          <option value="date_asc">Oldest First</option>
+          <option value="name_asc">Name (A-Z)</option>
+          <option value="name_desc">Name (Z-A)</option>
+          <option value="size_desc">Largest Size</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Documents Grid -->
+  <div id="documents-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+    <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-secondary);">
+      Loading your documents...
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="delete-doc-modal" class="modal-backdrop">
+  <div class="modal-content" style="padding: 2rem;">
+    <h3 style="font-size: var(--text-lg); font-weight: 600; margin-bottom: 0.75rem; color: #FFFFFF;">Confirm Document Deletion</h3>
+    <p style="color: var(--text-secondary); font-size: var(--text-sm); line-height: 1.6; margin-bottom: 1.75rem;">
+      Are you sure you want to permanently delete <strong id="delete-doc-name" style="color: #FFFFFF;">this document</strong>?
+      This will also remove all extracted text chunks, conversation history, and saved summaries. This action cannot be undone.
+    </p>
+
+    <div style="display: flex; justify-content: flex-end; gap: 0.85rem;">
+      <button id="btn-cancel-delete" class="btn btn-secondary btn-sm">Cancel</button>
+      <button id="btn-confirm-delete" class="btn btn-danger btn-sm">Delete Document</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/documents.js') }}"></script>
+{% endblock %}

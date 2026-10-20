@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Settings — DocExpo{% endblock %}
+{% block navbar_title %}Account Settings{% endblock %}
+
+{% block content %}
+<div class="page-body" style="max-width: 820px;">
+  <div style="margin-bottom: 2rem;">
+    <h1 style="font-size: var(--text-2xl); font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.35rem; color: #FFFFFF;">
+      Account Settings
+    </h1>
+    <p style="color: var(--text-secondary); font-size: var(--text-sm);">
+      Manage your credentials, preferences, and workspace storage
+    </p>
+  </div>
+
+  <!-- Profile Information -->
+  <div class="card" style="margin-bottom: 2rem;">
+    <h3 style="font-size: var(--text-base); font-weight: 600; margin-bottom: 1.25rem; border-bottom: 1px solid var(--glass-border-subtle); padding-bottom: 0.75rem; color: #FFFFFF;">
+      Profile Information
+    </h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem;">
+      <div>
+        <label class="form-label">Full Name</label>
+        <div style="font-weight: 500; font-size: var(--text-sm); color: #FFFFFF;">{{ current_user.full_name }}</div>
+      </div>
+      <div>
+        <label class="form-label">Email Address</label>
+        <div style="font-weight: 500; font-size: var(--text-sm); color: #FFFFFF;">{{ current_user.email }}</div>
+      </div>
+    </div>
+    <div style="font-size: 12px; color: var(--text-tertiary);">
+      Member since {{ current_user.created_at.strftime('%B %d, %Y') if current_user.created_at else 'Recently' }}
+    </div>
+  </div>
+
+  <!-- Security: Change Password -->
+  <div class="card" style="margin-bottom: 2rem;">
+    <h3 style="font-size: var(--text-base); font-weight: 600; margin-bottom: 1.25rem; border-bottom: 1px solid var(--glass-border-subtle); padding-bottom: 0.75rem; color: #FFFFFF;">
+      Security & Password
+    </h3>
+    <form id="password-change-form">
+      <div class="form-group">
+        <label class="form-label" for="current-pwd">Current Password</label>
+        <input type="password" id="current-pwd" class="form-control" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="new-pwd">New Password</label>
+        <input type="password" id="new-pwd" class="form-control" placeholder="At least 6 characters" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="confirm-new-pwd">Confirm New Password</label>
+        <input type="password" id="confirm-new-pwd" class="form-control" required>
+      </div>
+
+      <div id="pwd-msg" class="form-error" style="display: none; margin-bottom: 1.25rem;"></div>
+
+      <button type="submit" id="btn-save-pwd" class="btn btn-primary btn-sm">
+        Save New Password
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const pwdForm = document.getElementById('password-change-form');
+  if (pwdForm) {
+    pwdForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const current_password = document.getElementById('current-pwd').value;
+      const new_password = document.getElementById('new-pwd').value;
+      const confirm_password = document.getElementById('confirm-new-pwd').value;
+      const msgDiv = document.getElementById('pwd-msg');
+      const submitBtn = document.getElementById('btn-save-pwd');
+
+      if (new_password.length < 6) {
+        msgDiv.textContent = 'New password must be at least 6 characters.';
+        msgDiv.style.display = 'block';
+        return;
+      }
+
+      if (new_password !== confirm_password) {
+        msgDiv.textContent = 'New passwords do not match.';
+        msgDiv.style.display = 'block';
+        return;
+      }
+
+      msgDiv.style.display = 'none';
+      submitBtn.disabled = true;
+
+      fetch('/api/auth/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ current_password, new_password, confirm_password })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          msgDiv.textContent = data.error;
+          msgDiv.style.display = 'block';
+        } else {
+          window.showToast('Password updated successfully!', 'success');
+          pwdForm.reset();
+        }
+      })
+      .catch(() => {
+        msgDiv.textContent = 'Failed to update password.';
+        msgDiv.style.display = 'block';
+      })
+      .finally(() => {
+        submitBtn.disabled = false;
+      });
+    });
+  }
+});
+</script>
+{% endblock %}
